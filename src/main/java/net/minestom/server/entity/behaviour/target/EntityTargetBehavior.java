@@ -7,6 +7,7 @@ public abstract class EntityTargetBehavior {
     BlockPosition target;
     public BlockPosition getTarget(Entity source){
         if(target==null)findTarget(source);
+        else if(target.getDistance(source.getPosition().toBlockPosition()) < 1f)findTarget(source);
         return target;
     }
 
