@@ -1,2 +1,3 @@
-rootProject.name = 'Minestom'
+rootProject.name = 'minestom-api'
+include 'java'
 
