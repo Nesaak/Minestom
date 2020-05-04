@@ -2,9 +2,7 @@ package net.minestom.server.entity;
 
 import net.minestom.server.collision.CollisionUtils;
 import net.minestom.server.entity.behaviour.EntityBehavior;
-import net.minestom.server.entity.pathfinding.EntityPathFinder;
 import net.minestom.server.entity.property.Attribute;
-import net.minestom.server.instance.Instance;
 import net.minestom.server.network.packet.server.play.*;
 import net.minestom.server.network.player.PlayerConnection;
 import net.minestom.server.utils.BlockPosition;
