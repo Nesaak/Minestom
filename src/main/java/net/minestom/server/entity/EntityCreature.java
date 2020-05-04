@@ -1,8 +1,10 @@
 package net.minestom.server.entity;
 
 import net.minestom.server.collision.CollisionUtils;
+import net.minestom.server.entity.behaviour.EntityBehavior;
 import net.minestom.server.entity.pathfinding.EntityPathFinder;
 import net.minestom.server.entity.property.Attribute;
+import net.minestom.server.instance.Instance;
 import net.minestom.server.network.packet.server.play.*;
 import net.minestom.server.network.player.PlayerConnection;
 import net.minestom.server.utils.BlockPosition;
@@ -10,17 +12,21 @@ import net.minestom.server.utils.ChunkUtils;
 import net.minestom.server.utils.Position;
 import net.minestom.server.utils.Vector;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.LinkedList;
 import java.util.function.Consumer;
 
 public abstract class EntityCreature extends LivingEntity {
 
-    private EntityPathFinder pathFinder = new EntityPathFinder(this);
+    //private EntityPathFinder pathFinder = new EntityPathFinder(this);
+    private EntityBehavior entityBehavior ;
     private LinkedList<BlockPosition> blockPositions;
     private Position targetPosition;
-
+    private Instant lastUpdatePath = Instant.now();
     public EntityCreature(EntityType entityType, Position spawnPosition) {
         super(entityType.getId(), spawnPosition);
+        entityBehavior = new EntityBehavior(this);
     }
 
     @Override
@@ -41,7 +47,9 @@ public abstract class EntityCreature extends LivingEntity {
                 }
             }
         }
-
+        if(Duration.between(lastUpdatePath,Instant.now()).toMillis()>1500){
+            updatePath();
+        }
     }
 
     public void move(float x, float y, float z, boolean updateView) {
@@ -132,34 +140,33 @@ public abstract class EntityCreature extends LivingEntity {
 
     public void jump(float height) {
         // FIXME magic value
-        Vector velocity = new Vector(0, height * 10, 0);
+        Vector velocity = new Vector(0, height * 5, 0);
         setVelocity(velocity);
     }
 
-    public void setPathTo(Position position, int maxCheck, Consumer<Boolean> resultConsumer) {
-        pathFinder.getPath(position, maxCheck, blockPositions -> {
+    public void updatePath(){
+        entityBehavior.getPath(blockPositions -> {
+
             if (blockPositions == null || blockPositions.isEmpty()) {
                 // Didn't find path
-                if (resultConsumer != null)
-                    resultConsumer.accept(false);
                 return;
             }
+            blockPositions.iterator().forEachRemaining(System.out::println);
             blockPositions.pollFirst(); // Remove first entry (where the entity is)
 
             this.blockPositions = blockPositions;
             setNextPathPosition();
-
-            if (resultConsumer != null)
-                resultConsumer.accept(true);
         });
     }
 
-    public void setPathTo(Position position, int maxCheck) {
-        setPathTo(position, maxCheck, null);
+
+    public void setPathTo(Position position, Consumer<Boolean> resultConsumer) {
+        entityBehavior.getTargetBehavior().setTarget(position.toBlockPosition());
+        updatePath();
     }
 
     public void setPathTo(Position position) {
-        setPathTo(position, 1000, null);
+        setPathTo(position, null);
     }
 
     public void moveTowards(Position direction, float speed) {
@@ -180,7 +187,7 @@ public abstract class EntityCreature extends LivingEntity {
 
         this.targetPosition = blockPosition.toPosition();//.add(0.5f, 0, 0.5f);
         // FIXME: jump support
-        if (blockPosition.getY() > getPosition().getY())
+        if (blockPosition.getY() > getPosition().getY()+0.3)
             jump(1);
     }
 }
