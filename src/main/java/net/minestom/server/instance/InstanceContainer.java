@@ -7,6 +7,7 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.event.PlayerBlockBreakEvent;
 import net.minestom.server.instance.batch.BlockBatch;
 import net.minestom.server.instance.batch.ChunkBatch;
+import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.CustomBlock;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
 import net.minestom.server.network.PacketWriterUtils;
@@ -15,6 +16,7 @@ import net.minestom.server.network.packet.server.play.ParticlePacket;
 import net.minestom.server.network.packet.server.play.UnloadChunkPacket;
 import net.minestom.server.particle.Particle;
 import net.minestom.server.particle.ParticleCreator;
+import net.minestom.server.storage.StorageFolder;
 import net.minestom.server.timer.TaskRunnable;
 import net.minestom.server.utils.BlockPosition;
 import net.minestom.server.utils.ChunkUtils;
@@ -24,10 +26,12 @@ import net.minestom.server.utils.time.TimeUnit;
 import net.minestom.server.utils.time.UpdateOption;
 import net.minestom.server.world.Dimension;
 
-import java.io.File;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
 /**
@@ -35,18 +39,21 @@ import java.util.function.Consumer;
  */
 public class InstanceContainer extends Instance {
 
-    private File folder;
+    private StorageFolder storageFolder;
 
     private List<SharedInstance> sharedInstances = new CopyOnWriteArrayList<>();
 
     private ChunkGenerator chunkGenerator;
     private Map<Long, Chunk> chunks = new ConcurrentHashMap<>();
 
+    private ReadWriteLock changingBlockLock = new ReentrantReadWriteLock();
+    private Map<BlockPosition, Block> currentlyChangingBlocks = new HashMap<>();
+
     private boolean autoChunkLoad;
 
-    protected InstanceContainer(UUID uniqueId, Dimension dimension, File folder) {
+    protected InstanceContainer(UUID uniqueId, Dimension dimension, StorageFolder storageFolder) {
         super(uniqueId, dimension);
-        this.folder = folder;
+        this.storageFolder = storageFolder;
     }
 
     @Override
@@ -76,6 +83,13 @@ public class InstanceContainer extends Instance {
 
             BlockPosition blockPosition = new BlockPosition(x, y, z);
 
+            if(isAlreadyChanged(blockPosition, blockId)) { // do NOT change the block again.
+                // Avoids StackOverflowExceptions when onDestroy tries to destroy the block itself
+                // This can happen with nether portals which break the entire frame when a portal block is broken
+                return;
+            }
+            setAlreadyChanged(blockPosition, blockId);
+
             // Call the destroy listener if previous block was a custom block
             callBlockDestroy(chunk, index, blockPosition);
 
@@ -100,6 +114,23 @@ public class InstanceContainer extends Instance {
             if (isCustomBlock)
                 callBlockPlace(chunk, index, blockPosition);
         }
+    }
+
+    private void setAlreadyChanged(BlockPosition blockPosition, short blockId) {
+        currentlyChangingBlocks.put(blockPosition, Block.fromId(blockId));
+    }
+
+    /**
+     * Has this block already changed since last update? Prevents StackOverflow with blocks trying to modify their position in onDestroy or onPlace
+     * @param blockPosition
+     * @param blockId
+     * @return
+     */
+    private boolean isAlreadyChanged(BlockPosition blockPosition, short blockId) {
+        Block changedBlock = currentlyChangingBlocks.get(blockPosition);
+        if(changedBlock == null)
+            return false;
+        return changedBlock.getBlockId() == blockId;
     }
 
     @Override
@@ -261,20 +292,20 @@ public class InstanceContainer extends Instance {
     }
 
     @Override
-    public void saveChunkToFolder(Chunk chunk, Runnable callback) {
-        CHUNK_LOADER_IO.saveChunk(chunk, getFolder(), callback);
+    public void saveChunkToStorageFolder(Chunk chunk, Runnable callback) {
+        CHUNK_LOADER_IO.saveChunk(chunk, getStorageFolder(), callback);
     }
 
     @Override
-    public void saveChunksToFolder(Runnable callback) {
-        if (folder == null)
+    public void saveChunksToStorageFolder(Runnable callback) {
+        if (storageFolder == null)
             throw new UnsupportedOperationException("You cannot save an instance without setting a folder.");
 
         Iterator<Chunk> chunks = getChunks().iterator();
         while (chunks.hasNext()) {
             Chunk chunk = chunks.next();
             boolean isLast = !chunks.hasNext();
-            saveChunkToFolder(chunk, isLast ? callback : null);
+            saveChunkToStorageFolder(chunk, isLast ? callback : null);
         }
     }
 
@@ -295,9 +326,9 @@ public class InstanceContainer extends Instance {
 
     @Override
     protected void retrieveChunk(int chunkX, int chunkZ, Consumer<Chunk> callback) {
-        if (folder != null) {
+        if (storageFolder != null) {
             // Load from file if possible
-            CHUNK_LOADER_IO.loadChunk(chunkX, chunkZ, this, chunk -> {
+            CHUNK_LOADER_IO.loadChunk(this, chunkX, chunkZ, getStorageFolder(), chunk -> {
                 cacheChunk(chunk);
                 if (callback != null)
                     callback.accept(chunk);
@@ -379,12 +410,14 @@ public class InstanceContainer extends Instance {
         return Collections.unmodifiableCollection(chunks.values());
     }
 
-    public File getFolder() {
-        return folder;
+    @Override
+    public StorageFolder getStorageFolder() {
+        return storageFolder;
     }
 
-    public void setFolder(File folder) {
-        this.folder = folder;
+    @Override
+    public void setStorageFolder(StorageFolder storageFolder) {
+        this.storageFolder = storageFolder;
     }
 
     private void sendBlockChange(Chunk chunk, BlockPosition blockPosition, short blockId) {
@@ -413,5 +446,14 @@ public class InstanceContainer extends Instance {
                 currentBlock.scheduledUpdate(instance, position, getBlockData(position));
             }
         }, new UpdateOption(time, unit));
+    }
+
+    @Override
+    public void tick(long time) {
+        super.tick(time);
+        Lock wrlock = changingBlockLock.writeLock();
+        wrlock.lock();
+        currentlyChangingBlocks.clear();
+        wrlock.unlock();
     }
 }

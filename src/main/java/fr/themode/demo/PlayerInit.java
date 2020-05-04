@@ -17,6 +17,7 @@ import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.network.ConnectionManager;
 import net.minestom.server.ping.ResponseDataConsumer;
+import net.minestom.server.storage.StorageFolder;
 import net.minestom.server.timer.TaskRunnable;
 import net.minestom.server.utils.MathUtils;
 import net.minestom.server.utils.Position;
@@ -32,10 +33,11 @@ public class PlayerInit {
     private static volatile InstanceContainer instanceContainer;
 
     static {
+        StorageFolder storageFolder = MinecraftServer.getStorageManager().getFolder("chunk_data");
         ChunkGeneratorDemo chunkGeneratorDemo = new ChunkGeneratorDemo();
         NoiseTestGenerator noiseTestGenerator = new NoiseTestGenerator();
-        //instanceContainer = MinecraftServer.getInstanceManager().createInstanceContainer(new File("chunk_data"));
-        instanceContainer = MinecraftServer.getInstanceManager().createInstanceContainer();
+        instanceContainer = MinecraftServer.getInstanceManager().createInstanceContainer(storageFolder);
+        //instanceContainer = MinecraftServer.getInstanceManager().createInstanceContainer();
         instanceContainer.enableAutoChunkLoad(true);
         instanceContainer.setChunkGenerator(noiseTestGenerator);
 
@@ -85,6 +87,7 @@ public class PlayerInit {
         });
 
         connectionManager.addPlayerInitialization(player -> {
+
             player.addEventCallback(AttackEvent.class, event -> {
                 Entity entity = event.getTarget();
                 if (entity instanceof EntityCreature) {
@@ -127,8 +130,8 @@ public class PlayerInit {
                     return;
 
                 short blockId = player.getInstance().getBlockId(event.getBlockPosition());
-                player.sendMessage("id: " + blockId);
-                player.sendMessage("block alternative id: " + Block.getBlockAlternative(blockId).getId());
+                Block block = Block.fromId(blockId);
+                player.sendMessage("You clicked at the block " + block);
             });
 
             player.addEventCallback(PickupItemEvent.class, event -> {
@@ -155,7 +158,7 @@ public class PlayerInit {
             });
 
             player.addEventCallback(PlayerSpawnEvent.class, event -> {
-                player.setGameMode(GameMode.CREATIVE);
+                player.setGameMode(GameMode.SURVIVAL);
                 player.teleport(new Position(0, 75, 0));
 
                 ItemStack item = new ItemStack(Material.STONE, (byte) 43);
@@ -166,10 +169,16 @@ public class PlayerInit {
 
                 Inventory inventory = new Inventory(InventoryType.CHEST_1_ROW, "Test inventory");
                 inventory.addInventoryCondition((p, slot, clickType, inventoryConditionResult) -> {
-                    player.sendMessage("click type: " + clickType);
+                    player.sendMessage("click type inventory: " + clickType);
+                    System.out.println("slot inv: " + slot);
                     inventoryConditionResult.setCancel(false);
                 });
                 inventory.setItemStack(0, item.clone());
+
+                player.getInventory().addInventoryCondition((p, slot, clickType, inventoryConditionResult) -> {
+                    player.sendMessage("CLICK PLAYER INVENTORY");
+                    System.out.println("slot player: " + slot);
+                });
 
                 player.openInventory(inventory);
 
@@ -196,6 +205,15 @@ public class PlayerInit {
             BelowNameScoreboard belowNameScoreboard = new BelowNameScoreboard();
             setBelowNameScoreboard(belowNameScoreboard);
             belowNameScoreboard.updateScore(this, 50);*/
+
+                player.addEventCallback(PlayerUseItemEvent.class, useEvent -> {
+                    player.sendMessage("Using item in air: " + useEvent.getItemStack().getMaterial());
+                });
+
+                player.addEventCallback(PlayerUseItemOnBlockEvent.class, useEvent -> {
+                    player.sendMessage("Main item: " + player.getInventory().getItemInMainHand().getMaterial());
+                    player.sendMessage("Using item on block: " + useEvent.getItemStack().getMaterial() + " at " + useEvent.getPosition() + " on face " + useEvent.getBlockFace());
+                });
             });
         });
     }
