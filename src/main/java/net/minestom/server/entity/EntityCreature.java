@@ -45,7 +45,8 @@ public abstract class EntityCreature extends LivingEntity {
                 }
             }
         }
-        if(Duration.between(lastUpdatePath,Instant.now()).toMillis()>1500){
+        if(Duration.between(lastUpdatePath,Instant.now()).toMillis()>5000){
+            lastUpdatePath = Instant.now();
             updatePath();
         }
     }

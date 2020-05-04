@@ -30,7 +30,6 @@ public class EntityBehavior {
 
     public void getPath( Consumer<LinkedList<BlockPosition>> consumer) {
         pathfindingPool.execute(() -> {
-            Instance instance = entity.getInstance();
             consumer.accept(pathBehaviour.getPath(targetBehavior,entity));
         });
     }
