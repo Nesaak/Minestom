@@ -6,7 +6,6 @@ import net.minestom.server.entity.behaviour.pathfinding.DefaultPathBehaviour;
 import net.minestom.server.entity.behaviour.pathfinding.EntityPathBehaviour;
 import net.minestom.server.entity.behaviour.target.DefaultTargetBehaviour;
 import net.minestom.server.entity.behaviour.target.EntityTargetBehavior;
-import net.minestom.server.entity.pathfinding.AStarPathfinder;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.utils.BlockPosition;
