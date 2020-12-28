@@ -216,7 +216,7 @@ extends java.lang.Object</pre>
 <td class="colFirst"><code><a href="../entity/Player.html" title="class in net.minestom.server.entity">Player</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#findPlayer(java.lang.String)">findPlayer</a></span>&#8203;(java.lang.String&nbsp;username)</code></th>
 <td class="colLast">
-<div class="block">Attempts to find the closest player matching a given username.</div>
+<div class="block">Finds the closest player matching a given username.</div>
 </td>
 </tr>
 <tr id="i6" class="altColor">
@@ -432,14 +432,13 @@ public&nbsp;java.util.Collection&lt;<a href="../entity/Player.html" title="class
 <pre class="methodSignature">@Nullable
 public&nbsp;<a href="../entity/Player.html" title="class in net.minestom.server.entity">Player</a>&nbsp;findPlayer&#8203;(@NotNull
                          java.lang.String&nbsp;username)</pre>
-<div class="block">Attempts to find the closest player matching a given username.
- This methods supports partial usernames so if entered "not" with a player "notch" playing, it would return notch
+<div class="block">Finds the closest player matching a given username.
  <p></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>username</code> - the player username (can be partial)</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the closest match, null if none are found</dd>
+<dd>the closest match, null if no players are online</dd>
 </dl>
 </li>
 </ul>
