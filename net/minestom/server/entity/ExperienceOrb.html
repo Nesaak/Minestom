@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -221,20 +221,27 @@ extends <a href="Entity.html" title="class in net.minestom.server.entity">Entity
 </td>
 </tr>
 <tr id="i2" class="altColor">
+<td class="colFirst"><code><a href="../network/packet/server/ServerPacket.html" title="interface in net.minestom.server.network.packet.server">ServerPacket</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSpawnPacket()">getSpawnPacket</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Packet to be sent when entity is spawned, null if non.</div>
+</td>
+</tr>
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setExperienceCount(short)">setExperienceCount</a></span>&#8203;(short&nbsp;experienceCount)</code></th>
 <td class="colLast">
 <div class="block">Changes the experience count.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#spawn()">spawn</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Called when a new instance is set.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#update(long)">update</a></span>&#8203;(long&nbsp;time)</code></th>
 <td class="colLast">
@@ -356,6 +363,21 @@ extends <a href="Entity.html" title="class in net.minestom.server.entity">Entity
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="Entity.html#spawn()">spawn</a></code>&nbsp;in class&nbsp;<code><a href="Entity.html" title="class in net.minestom.server.entity">Entity</a></code></dd>
+</dl>
+</li>
+</ul>
+<a id="getSpawnPacket()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getSpawnPacket</h4>
+<pre class="methodSignature">public&nbsp;<a href="../network/packet/server/ServerPacket.html" title="interface in net.minestom.server.network.packet.server">ServerPacket</a>&nbsp;getSpawnPacket()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="Entity.html#getSpawnPacket()">Entity</a></code></span></div>
+<div class="block">Packet to be sent when entity is spawned, null if non.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="Entity.html#getSpawnPacket()">getSpawnPacket</a></code>&nbsp;in class&nbsp;<code><a href="Entity.html" title="class in net.minestom.server.entity">Entity</a></code></dd>
 </dl>
 </li>
 </ul>
